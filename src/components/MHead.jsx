@@ -4,7 +4,7 @@ import { useGLTF } from '@react-three/drei'
 export function MHead(props) {
   const { nodes, materials } = useGLTF('/models/MHead.glb')
   return (
-    <group scale={[10,10.9,10]} position={[0,-1.3,0]} {...props} dispose={null}>
+    <group scale={[13,17,12]} position={[0,-1.3,0.1]} {...props} dispose={null}>
       <mesh
         castShadow
         receiveShadow

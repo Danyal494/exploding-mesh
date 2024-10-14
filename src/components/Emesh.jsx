@@ -1,17 +1,17 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Canvas, useFrame, useLoader, extend } from "@react-three/fiber";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
-import { AccumulativeShadows, Environment, OrbitControls, RandomizedLight, shaderMaterial, Stage } from "@react-three/drei";
+import { AccumulativeShadows, Backdrop, Environment, OrbitControls, RandomizedLight, shaderMaterial, Stage, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { MHead } from "./MHead";
+import Loader from "./Loader";
 
 const CustomShaderMaterial = shaderMaterial(
   {
     mousePosition: new THREE.Vector2(0.0, 0.0),
     lightPosition: new THREE.Vector3(1, 1, 2),
     time: 0.0,
-    metalness: 0.5,   // Set metalness to 1
-    roughness: 0.1,   // Set roughness to 0
+    metalness: 0.3,   // Set metalness to 1
+    roughness: 0.2,   // Set roughness to 0
   },
   // Vertex Shader
   `
@@ -34,13 +34,13 @@ void main() {
   float distanceToMouse = distance(position.xy, mousePosition);
 
   // Set a smaller threshold to reduce the effect's area
-  float threshold = 0.15;  // Smaller value to shrink the area of effect
+  float threshold = 0.09;  // Smaller value to shrink the area of effect
 
   // Calculate proximity factor based on distance (sharp falloff outside threshold)
   float proximityFactor = smoothstep(threshold, 0.0, distanceToMouse);
 
   // Increase the push amount to move vertices farther away
-  float pushAmount = 0.2 * proximityFactor;  // Larger push for more dramatic "explosion"
+  float pushAmount = 0.6 * proximityFactor;  // Larger push for more dramatic "explosion"
 
   // Push vertices away from the mouse position
   vec3 newPosition = position + normal * pushAmount;
@@ -90,9 +90,11 @@ const Scene = () => {
   const shaderMaterialRef = useRef();
 
   // Load OBJ model
-  const obj = useLoader(OBJLoader, "/models/MHead.obj");
+  // const obj = useLoader(OBJLoader, "/models/MHead.obj");
+
+  const { scene } = useGLTF("/models/MHeads.glb");
   useEffect(() => {
-    obj.traverse((child) => {
+    scene.traverse((child) => {
       if (child.isMesh) {
         const geometry = child.geometry;
         geometry.center();
@@ -105,7 +107,7 @@ const Scene = () => {
         const color = new THREE.Color();
 
         for (let f = 0; f < numFaces; f++) {
-          const index = 9 * f;
+          const index = 2 * f;
           let lightness = 0.3 + Math.random() * 0.7;
           color.setHSL(0.0, 1.0, lightness);
           let d = 0.05 * (0.5 - Math.random());
@@ -127,7 +129,8 @@ const Scene = () => {
         setModelGeometry(geometry);
       }
     });
-  }, [obj]);
+  },[scene])
+  // }, [obj]);
 
   useFrame(() => {
     if (shaderMaterialRef.current) {
@@ -154,7 +157,8 @@ const Scene = () => {
   return (
     <>
       {modelGeometry && (
-        <mesh geometry={modelGeometry}  position={[0,0.06,0]} scale={[12.7, 11.9, 15]}>
+        <mesh castShadow geometry={modelGeometry} rotation={[Math.PI/2,0,0]}  position={[0,0.9,0]} scale={[16.7, 19.7, 18.7]}>
+          <ambientLight intensity={1.5}/>
           <customShaderMaterial  ref={shaderMaterialRef} attach="material" />
         </mesh>
       )}
@@ -163,22 +167,41 @@ const Scene = () => {
 };
 
 const Emesh = () => {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
   return (
-    <Canvas  style={{ height: "100vh" }} camera={{ position: [0, 0, 25], fov: 20 }}>
-      {/* <ambientLight /> */}
-      <spotLight position={[0, 15, 0]} angle={0.3} penumbra={1} castShadow intensity={2} shadow-bias={-0.0001} />
-    
-        <RandomizedLight amount={8} radius={10} ambient={0.5} position={[1, 5, -1]} />
-    
-      <Environment preset="sunset" blur={0} background={["true"]} backgroundBlurriness={0.7}  />
-    
-      <OrbitControls
-   
-       />
-    <MHead/>
-      <Scene  />
-    
-    </Canvas>
+    <div>
+      {
+        loading ? (<Loader/>) : (
+          <Canvas  style={{ height: "100vh" }} camera={{ position: [0, 0, 35], fov: 20 }}>
+          <Environment preset="city" blur={0} background={["true"]} backgroundBlurriness={0.7}  />
+        <ambientLight intensity={1.5}/>
+          <OrbitControls
+            minPolarAngle={Math.PI / 2}  // Limit vertical rotation to a fixed angle
+            maxPolarAngle={Math.PI / 2}    // Vertical rotation limit (keeping it as is)
+            minAzimuthAngle={-0.0760}  // -5 degrees in radians
+            maxAzimuthAngle={0.009} 
+          maxDistance={35} minDistance={25}
+           />
+              <Backdrop receiveShadow scale={[35, 12, 15]} floor={1.5} position={[0, -4, -2]}>
+            <meshPhysicalMaterial roughness={1} color="#e8dede" />
+          </Backdrop>
+        <MHead/>
+          <Scene   />
+        
+        </Canvas>
+        )
+      }
+
+  
+       </div>
   );
 };
 
