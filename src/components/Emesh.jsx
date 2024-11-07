@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, Suspense } from "react";
 import { Canvas, useFrame, useLoader, extend } from "@react-three/fiber";
 import { AccumulativeShadows, Backdrop, Environment, OrbitControls, RandomizedLight, shaderMaterial, Stage, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -180,6 +180,8 @@ const Emesh = () => {
     <div>
       {
         loading ? (<Loader/>) : (
+          <Suspense fallback={<Loader/>}>
+
           <Canvas  style={{ height: "100vh" }} camera={{ position: [0, 0, 35], fov: 20 }}>
           <Environment preset="city" blur={0} background={["true"]} backgroundBlurriness={0.7}  />
         <ambientLight intensity={1.5}/>
@@ -188,8 +190,8 @@ const Emesh = () => {
             maxPolarAngle={Math.PI / 2}    // Vertical rotation limit (keeping it as is)
             minAzimuthAngle={-0.0760}  // -5 degrees in radians
             maxAzimuthAngle={0.009} 
-          maxDistance={35} minDistance={25}
-           />
+            maxDistance={35} minDistance={25}
+            />
               <Backdrop receiveShadow scale={[35, 12, 15]} floor={1.5} position={[0, -4, -2]}>
             <meshPhysicalMaterial roughness={1} color="#e8dede" />
           </Backdrop>
@@ -197,6 +199,7 @@ const Emesh = () => {
           <Scene   />
         
         </Canvas>
+            </Suspense>
         )
       }
 
